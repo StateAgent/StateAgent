@@ -14,6 +14,10 @@
 // mime type for sending response
 #define MIMETYPE_JSON "application/json; charset=utf-8"
 
+// for forwarding requests to Python middleware
+#include <curl/curl.h>
+#include <string>
+
 // auto generated files (see README.md for details)
 #include "index.html.gz.hpp"
 #include "loading.html.hpp"
@@ -32,6 +36,32 @@
 #include <unordered_set>
 
 using json = nlohmann::ordered_json;
+
+// helper for posting to middleware
+static size_t middleware_write_cb(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    std::string &buf = *static_cast<std::string*>(userdata);
+    buf.append(ptr, size * nmemb);
+    return size * nmemb;
+}
+
+static std::string forward_to_middleware(const std::string &prompt) {
+    CURL *curl = curl_easy_init();
+    std::string response;
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:5000/process_prompt");
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        std::string payload = std::string("{\"prompt\": \"") + prompt + "\"}";
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, middleware_write_cb);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        CURLcode res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            response = "{\"error\": \"Middleware request failed\"}";
+        }
+        curl_easy_cleanup(curl);
+    }
+    return response;
+}
 
 constexpr int HTTP_POLLING_SECONDS = 1;
 
@@ -4356,6 +4386,19 @@ int main(int argc, char ** argv) {
             OAICOMPAT_TYPE_COMPLETION);
     };
 
+    const auto handle_completion_proxy = [](const httplib::Request & req, httplib::Response & res) {
+        try {
+            auto body = json::parse(req.body);
+            std::string prompt = body.at("prompt").get<std::string>();
+            std::string middleware_res = forward_to_middleware(prompt);
+            res.set_content(middleware_res, MIMETYPE_JSON);
+            res.status = 200;
+        } catch (...) {
+            res.status = 500;
+            res.set_content("{\"error\":\"invalid request\"}", MIMETYPE_JSON);
+        }
+    };
+
     const auto handle_infill = [&ctx_server, &res_error, &handle_completions_impl](const httplib::Request & req, httplib::Response & res) {
         // check model compatibility
         std::string err;
@@ -4837,7 +4880,8 @@ int main(int argc, char ** argv) {
     svr->Get ("/models",              handle_models); // public endpoint (no API key check)
     svr->Get ("/v1/models",           handle_models); // public endpoint (no API key check)
     svr->Get ("/api/tags",            handle_models); // ollama specific endpoint. public endpoint (no API key check)
-    svr->Post("/completion",          handle_completions); // legacy
+    svr->Post("/raw_completion",      handle_completions); // original inference
+    svr->Post("/completion",          handle_completion_proxy); // proxy to middleware
     svr->Post("/completions",         handle_completions);
     svr->Post("/v1/completions",      handle_completions_oai);
     svr->Post("/chat/completions",    handle_chat_completions);
