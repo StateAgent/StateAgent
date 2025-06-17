@@ -1,0 +1,21 @@
+# --- Web Framework & Server ---
+# For running the main orchestrator API endpoint
+Flask==3.0.3
+Flask-Cors==4.0.1  # Handles cross-origin requests, allowing a web UI to talk to the server
+requests==2.32.3  # For making outbound calls to the llama.cpp server
+
+# --- Machine Learning & Data Handling ---
+# The core libraries for data manipulation and calculations
+numpy==1.26.4          # Foundational library for numerical operations, used for vectors
+pandas==2.2.2          # Used for managing the master_memory_log.csv file
+scikit-learn==1.5.0    # Used for calculating cosine similarity between vectors
+
+# --- LLM & Vector Utilities ---
+# Libraries specifically for AI and model interaction
+safetensors==0.4.3  # The preferred, secure way to save/load memory vectors
+tiktoken==0.7.0     # From OpenAI, used to accurately count tokens for context monitoring
+PyYAML==6.0.1       # Used for parsing the .yaml Persona/Ability/Engine "card" files
+
+# --- System Utilities ---
+# For file system monitoring
+watchdog==4.0.1  # Watches the /prompts directory for changes and triggers an automatic reload

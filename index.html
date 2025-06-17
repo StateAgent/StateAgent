@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StateAgent v0.2</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>StateAgent v0.2</h1>
+            <div class="controls">
+                <label for="debug-toggle">Show Debugger:</label>
+                <input type="checkbox" id="debug-toggle">
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div id="chat-window" class="chat-window">
+                <!-- Messages will be appended here by JavaScript -->
+            </div>
+            <div id="debug-panel" class="debug-panel hidden">
+                <h3>Debugger Info</h3>
+                <pre id="debug-content">No debug info yet.</pre>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div id="image-preview-container" class="hidden">
+                <img id="image-preview" src="" alt="Image Preview"/>
+                <button id="remove-image-btn">×</button>
+            </div>
+            <form id="chat-form">
+                <input type="text" id="message-input" placeholder="Type a message or drop an image..." autocomplete="off">
+                <input type="file" id="image-input" accept="image/*" style="display: none;">
+                <button type="button" id="attach-file-btn">📎</button>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
