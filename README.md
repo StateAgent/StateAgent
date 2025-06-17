@@ -62,7 +62,7 @@ Once the backend is running, you can set up and launch the agent itself.
 
 **1. Clone the repository and install dependencies:**
 ```bash
-git clone https://github.com/your-username/StateAgent.git
+git clone https://github.com/StateAgent/StateAgent.git
 cd StateAgent
 pip install -r requirements.txt
 ```
